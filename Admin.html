@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+
+<style>
+  body {
+    background: #111;
+    color: #fff;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  input, textarea, button {
+    margin-top: 10px;
+    display: block;
+  }
+  button {
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+  hr {
+    margin: 30px 0;
+    border: 1px solid #333;
+  }
+</style>
+</head>
+
+<body>
+
+<h1>ADMIN PANEL</h1>
+
+<!-- ================= TOP MEDIA ================= -->
+<h2>Upload TOP Media (Above YES / NO)</h2>
+<input type="file" id="topMedia" accept="image/*,video/*" />
+<button onclick="uploadTopMedia()">Upload Top Media</button>
+
+<script>
+async function uploadTopMedia() {
+  const file = document.getElementById("topMedia").files[0];
+  if (!file) return alert("Select image / gif / video");
+
+  const fd = new FormData();
+  fd.append("media", file);
+
+  const res = await fetch("http://localhost:3000/upload-top-media", {
+    method: "POST",
+    body: fd
+  });
+
+  if (res.ok) alert("Top media uploaded ✅");
+  else alert("Upload failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= TOP NOTE (NEW) ================= -->
+<h2>Set TOP Note (Text below Top Media)</h2>
+<input type="text" id="topNoteText" placeholder="Enter top note text" />
+<button onclick="saveTopNote()">Save Top Note</button>
+
+<script>
+async function saveTopNote() {
+  const text = document.getElementById("topNoteText").value.trim();
+  if (!text) return alert("Enter note text");
+
+  const res = await fetch("http://localhost:3000/set-top-note", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+
+  if (res.ok) alert("Top note saved ✅");
+  else alert("Failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= YES MEDIA ================= -->
+<h2>Upload YES Click Media (After YES Click)</h2>
+<input type="file" id="yesMedia" accept="image/*,video/*" />
+<button onclick="uploadYesMedia()">Upload YES Media</button>
+
+<script>
+async function uploadYesMedia() {
+  const file = document.getElementById("yesMedia").files[0];
+  if (!file) return alert("Select image / gif / video");
+
+  const fd = new FormData();
+  fd.append("media", file);
+
+  const res = await fetch("http://localhost:3000/upload-yes-media", {
+    method: "POST",
+    body: fd
+  });
+
+  if (res.ok) alert("YES media uploaded ✅");
+  else alert("Upload failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= LEGACY IMAGE ================= -->
+<h2>Upload Image (Legacy / Old)</h2>
+<input type="file" id="file" accept="image/*" />
+<button onclick="upload()">Upload Image</button>
+
+<script>
+async function upload() {
+  const fileInput = document.getElementById("file");
+  if (!fileInput.files.length) return alert("Select image");
+
+  const fd = new FormData();
+  fd.append("photo", fileInput.files[0]);
+
+  const res = await fetch("http://localhost:3000/upload", {
+    method: "POST",
+    body: fd
+  });
+
+  if (res.ok) alert("Image uploaded successfully ✅");
+  else alert("Upload failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= NO NOTES ================= -->
+<h3>Manage NO Notes (Text Only)</h3>
+<textarea id="notesInput" rows="6" cols="40"
+placeholder="Har line ek note hoga"></textarea>
+<button onclick="saveNotes()">Save Notes</button>
+
+<script>
+async function saveNotes() {
+  const notes = document.getElementById("notesInput").value
+    .split("\n")
+    .map(n => n.trim())
+    .filter(Boolean);
+
+  if (!notes.length) return alert("Enter notes");
+
+  const res = await fetch("http://localhost:3000/set-notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notes })
+  });
+
+  if (res.ok) alert("Notes saved ✅");
+  else alert("Failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= GLOBAL SOUND ================= -->
+<h3>Upload Click Sound (Global NO Sound)</h3>
+<input type="file" id="soundInput" accept="audio/*" />
+<button onclick="uploadSound()">Upload Sound</button>
+
+<script>
+async function uploadSound() {
+  const file = document.getElementById("soundInput").files[0];
+  if (!file) return alert("Select sound");
+
+  const fd = new FormData();
+  fd.append("sound", file);
+
+  const res = await fetch("http://localhost:3000/upload-sound", {
+    method: "POST",
+    body: fd
+  });
+
+  const data = await res.json();
+  if (data.soundUrl) alert("Sound uploaded 🔊");
+  else alert("Upload failed ❌");
+}
+</script>
+
+<hr>
+
+<!-- ================= ADVANCED MODE ================= -->
+<h2>Advanced Mode: Note + Sound</h2>
+
+<input type="text" id="noteText" placeholder="Note text" />
+<input type="file" id="noteSound" accept="audio/*" />
+<button onclick="addNoteWithSound()">Add Note</button>
+
+<p id="noteCount"></p>
+<button onclick="saveAllNotesWithSound()">Save All Notes With Sound</button>
+
+<script>
+let notesWithSound = [];
+
+async function addNoteWithSound() {
+  const text = noteText.value.trim();
+  const sound = noteSound.files[0];
+  if (!text || !sound) return alert("Text + sound required");
+
+  const fd = new FormData();
+  fd.append("sound", sound);
+
+  const res = await fetch("http://localhost:3000/upload-sound", {
+    method: "POST",
+    body: fd
+  });
+
+  const data = await res.json();
+  if (!data.soundUrl) return alert("Sound upload failed");
+
+  notesWithSound.push({ text, sound: data.soundUrl });
+  noteText.value = "";
+  noteSound.value = "";
+  noteCount.innerText = `Notes added: ${notesWithSound.length}`;
+}
+
+async function saveAllNotesWithSound() {
+  if (!notesWithSound.length) return alert("No notes");
+
+  const res = await fetch("http://localhost:3000/set-notes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ notes: notesWithSound })
+  });
+
+  if (res.ok) {
+    alert("Notes saved ✅");
+    notesWithSound = [];
+    noteCount.innerText = "";
+  } else {
+    alert("Failed ❌");
+  }
+}
+</script>
+
+</body>
+</html>
